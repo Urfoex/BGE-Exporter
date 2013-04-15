@@ -44,21 +44,42 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
     bl_options = {'REGISTER'}
     
     #if sys.platform == 'darwin':
-        ## XXX, this line looks suspicious, could be done better?
-        #blender_bin_dir = '/' + os.path.join(*bpy.app.binary_path.split('/')[0:-4])
+        # XXX, this line looks suspicious, could be done better?
+        #blender_bin_dir_darwin = '/' + os.path.join(*bpy.app.binary_path.split('/')[0:-4])
         #ext = '.app'
     #else:
         #blender_bin_path = bpy.app.binary_path
         #blender_bin_dir = os.path.dirname(blender_bin_path)
         #ext = os.path.splitext(blender_bin_path)[-1].lower()
 
-    #default_player_path = os.path.join(blender_bin_dir, 'blenderplayer' + ext)
-    #player_path = StringProperty(
-            #name="Player Path",
-            #description="The path to the player to use",
-            #default=default_player_path,
-            #subtype='FILE_PATH',
-            #)
+	blender_version = str(bpy.app.version[0]) + "." + str(bpy.app.version[1]) + "." + str(bpy.app.version[2])
+	default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version + os.sep
+
+	blender_bin_dir_linux = bpy.utils.script_paths()[1] + 
+	blender_bin_dir_windows = bpy.utils.script_paths()[1] + 
+	blender_bin_dir_darwin = bpy.utils.script_paths()[1] + "path_to_blenderplayer.app"
+
+    default_player_path_linux = os.path.join(blender_bin_dir_linux, 'blenderplayer')
+    default_player_path_windows = os.path.join(blender_bin_dir_windows, 'blenderplayer' + ".exe")
+    default_player_path_osx = os.path.join(blender_bin_dir_darwin, 'blenderplayer' + ".app")
+    player_path_linux = StringProperty(
+			name="Player Path Linux",
+			description="The path to the player to use",
+			default=default_player_path_linux,
+			subtype='FILE_PATH',
+			)
+	player_path_windows = StringProperty(
+			name="Player Path Windows",
+			description="The path to the player to use",
+			default=default_player_path_windows,
+			subtype='FILE_PATH',
+			)
+	player_path_osx = StringProperty(
+			name="Player Path OSX",
+			description="The path to the player to use",
+			default=default_player_path_osx,
+			subtype='FILE_PATH',
+			)
     #filepath = StringProperty(
             #subtype='FILE_PATH',
             #)
@@ -87,24 +108,24 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         import time
         start_time = time.clock()
         print("Saving runtime to %r" % self.filepath)
-        WriteRuntime(self.player_path,
-					self.filepath,
+        WriteRuntime(self.player_path_linux,
+					self.filepath_linux,
 					self.copy_python,
 					self.overwrite_lib,
 					self.copy_dlls,
 					self.report,
 					target_os='LINUX'
 					)
-		WriteRuntime(self.player_path,
-					self.filepath,
+		WriteRuntime(self.player_path_windows,
+					self.filepath_windows,
 					self.copy_python,
 					self.overwrite_lib,
 					self.copy_dlls,
 					self.report,
 					target_os='WINDOWS'
 					)
-		WriteRuntime(self.player_path,
-					self.filepath,
+		WriteRuntime(self.player_path_osx,
+					self.filepath_osx,
 					self.copy_python,
 					self.overwrite_lib,
 					self.copy_dlls,
@@ -150,34 +171,34 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		#else:
 			#report({'WARNING'}, "Python not found in %r, skipping pythn copy" % src)
         
-	#def WriteAppleRuntime(player_path, output_path, copy_python, overwrite_lib):
-		## Enforce the extension
-		#if not output_path.endswith('.app'):
-			#output_path += '.app'
+	def WriteAppleRuntime(player_path, output_path, copy_python, overwrite_lib):
+		# Enforce the extension
+		if not output_path.endswith('.app'):
+			output_path += '.app'
 
-		## Use the system's cp command to preserve some meta-data
-		#os.system('cp -R "%s" "%s"' % (player_path, output_path))
+		# Use the system's cp command to preserve some meta-data
+		os.system('cp -R "%s" "%s"' % (player_path, output_path))
 		
-		#bpy.ops.wm.save_as_mainfile(filepath=os.path.join(output_path, "Contents/Resources/game.blend"),
-									#relative_remap=False,
-									#compress=False,
-									#copy=True,
-									#)
+		bpy.ops.wm.save_as_mainfile(filepath=os.path.join(output_path, "Contents/Resources/game.blend"),
+									relative_remap=False,
+									compress=False,
+									copy=True,
+									)
 		
-		## Python doesn't need to be copied for OS X since it's already inside blenderplayer.app
+		# Python doesn't need to be copied for OS X since it's already inside blenderplayer.app
 		
-	#def WriteRuntime(player_path, output_path, copy_python, overwrite_lib, copy_dlls, report=print, target_os):
-		#import struct
+	def WriteRuntime(player_path, output_path, copy_python, overwrite_lib, copy_dlls, report=print, target_os):
+		import struct
 
-		## Check the paths
-		#if not os.path.isfile(player_path) and not(os.path.exists(player_path) and player_path.endswith('.app')):
-			#report({'ERROR'}, "The player could not be found! Runtime not saved")
-			#return
+		# Check the paths
+		if not os.path.isfile(player_path) and not(os.path.exists(player_path) and player_path.endswith('.app')):
+			report({'ERROR'}, "The player could not be found! Runtime not saved")
+			return
 		
-		## Check if we're bundling a .app
-		#if player_path.endswith('.app'):
-			#WriteAppleRuntime(player_path, output_path, copy_python, overwrite_lib)
-			#return
+		# Check if we're bundling a .app
+		if player_path.endswith('.app'):
+			self.WriteAppleRuntime(player_path, output_path, copy_python, overwrite_lib)
+			return
 			
 		## Enforce "exe" extension on Windows
 		#if player_path.endswith('.exe') and not output_path.endswith('.exe'):
