@@ -16,7 +16,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# build on top of Moguris work #
+# building on top of Moguris work #
 
 bl_info = {
 	'name': 'Save As Multiple Game Engine Runtime',
@@ -51,8 +51,6 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		#blender_bin_path = bpy.app.binary_path
 		#blender_bin_dir = os.path.dirname(blender_bin_path)
 		#ext = os.path.splitext(blender_bin_path)[-1].lower()
-		
-
 
 	blender_version = str(bpy.app.version[0]) + "." + str(bpy.app.version[1]) + "." + str(bpy.app.version[2])
 	default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version
@@ -67,24 +65,6 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 	default_player_path_windows = os.path.join(blender_bin_dir_windows, 'blenderplayer.exe')
 	default_player_path_osx = os.path.join(blender_bin_dir_darwin, 'blenderplayer.app')
 
-	#player_path_linux = StringProperty(
-			#name="Player Path Linux",
-			#description="The path to the player to use",
-			#default=default_player_path_linux,
-			#subtype='FILE_PATH',
-			#)
-	#player_path_windows = StringProperty(
-			#name="Player Path Windows",
-			#description="The path to the player to use",
-			#default=default_player_path_windows,
-			#subtype='FILE_PATH',
-			#)
-	#player_path_osx = StringProperty(
-			#name="Player Path OSX",
-			#description="The path to the player to use",
-			#default=default_player_path_osx,
-			#subtype='FILE_PATH',
-			#)
 	filepath = StringProperty(
 			subtype='FILE_PATH',
 			)
@@ -103,9 +83,8 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		import time
 		start_time = time.clock()
 		print("Saving runtime to %r" % self.filepath)
-		print(self.default_player_path_linux)
-		print(self.default_player_path_windows)
-		print(self.default_player_path_osx)
+		self.get_player_files()
+		self.create_directories()
 		self.WriteRuntime(player_path=self.default_player_path_linux,
 					output_path=self.filepath + os.sep + "bin_linux_64",
 					copy_python=self.copy_python,
@@ -143,6 +122,14 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		wm.fileselect_add(self)
 		return {'RUNNING_MODAL'}
 	
+	def get_player_files(self):
+		print("Getting files from:", self.player_url)
+		print("Putting to:", self.default_player_path)
+	
+	def create_directories(self):
+		if not os.path.exists(self.filepath):
+			os.makedirs(self.filepath)
+	
 	#def CopyPythonLibs(dst, overwrite_lib, report=print):
 		#import platform
 
@@ -173,11 +160,15 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		# Enforce the extension
 		if not output_path.endswith('.app'):
 			output_path += '.app'
+			
+		#if not os.path.exists(output_path):
+			#os.makedirs(output_path)
 
+		print("Copying", player_path, "to", output_path)
 		# Use the system's cp command to preserve some meta-data
 		os.system('cp -R "%s" "%s"' % (player_path, output_path))
 		
-		bpy.ops.wm.save_as_mainfile(filepath=os.path.join(output_path, "Contents/Resources/game.blend"),
+		bpy.ops.wm.save_as_mainfile(filepath=os.path.join(output_path, "Contents" + os.sep + "Resources" + os.sep + "game.blend"),
 									relative_remap=False,
 									compress=False,
 									copy=True,
