@@ -68,16 +68,12 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 	filepath = StringProperty(
 			subtype='FILE_PATH',
 			)
-	copy_python = BoolProperty(
-			name="Copy Python",
-			description="Copy bundle Python with the runtime",
-			default=True,
-			)
-	overwrite_lib = BoolProperty(
-			name="Overwrite 'lib' folder",
-			description="Overwrites the lib folder (if one exists) with the bundled Python lib folder",
-			default=False,
-			)
+	#copy_python = BoolProperty(
+			#name="Copy Python",
+			#description="Copy bundle Python with the runtime",
+			#default=True,
+			#)
+
     
 	def execute(self, context):
 		import time
@@ -87,24 +83,24 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		self.create_directories()
 		self.WriteRuntime(player_path=self.default_player_path_linux,
 					output_path=self.filepath + os.sep + "bin_linux_64",
-					copy_python=self.copy_python,
-					overwrite_lib=self.overwrite_lib,
+					copy_python=True,
+					#copy_python=self.copy_python,
 					copy_dlls=False,
 					target_os='LINUX',
 					report=self.report,
 					)
 		self.WriteRuntime(player_path=self.default_player_path_windows,
 					output_path=self.filepath + os.sep + "bin_windows_64",
-					copy_python=self.copy_python,
-					overwrite_lib=self.overwrite_lib,
+					copy_python=True,
+					#copy_python=self.copy_python,
 					copy_dlls=True,
 					target_os='WINDOWS',
 					report=self.report,
 					)
 		self.WriteRuntime(player_path=self.default_player_path_osx,
 					output_path=self.filepath + os.sep + "bin_osx_64",
-					copy_python=self.copy_python,
-					overwrite_lib=self.overwrite_lib,
+					copy_python=True,
+					#copy_python=self.copy_python,
 					copy_dlls=False,
 					target_os='OSX',
 					report=self.report,
@@ -130,41 +126,37 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		if not os.path.exists(self.filepath):
 			os.makedirs(self.filepath)
 	
-	#def CopyPythonLibs(dst, overwrite_lib, report=print):
-		#import platform
+	def CopyPythonLibs(dst, overwrite_lib, report=print):
+		import platform
 
-		## use python module to find pytohn's libpath
-		#src = os.path.dirname(platform.__file__)
+		# use python module to find python's libpath
+		src = os.path.dirname(platform.__file__)
 
-		## dst points to lib/, but src points to current python's library path, eg:
-		##  '/usr/lib/python3.2' vs '/usr/lib'
-		## append python's library dir name to destination, so only python's
-		## libraries would be copied
-		#if os.name == 'posix':
-			#dst = os.path.join(dst, os.path.basename(src))
+		# dst points to lib/, but src points to current python's library path, eg:
+		#  '/usr/lib/python3.2' vs '/usr/lib'
+		# append python's library dir name to destination, so only python's
+		# libraries would be copied
+		if os.name == 'posix':
+			dst = os.path.join(dst, os.path.basename(src))
 
-		#if os.path.exists(src):
-			#write = False
-			#if os.path.exists(dst):
-				#if overwrite_lib:
-					#shutil.rmtree(dst)
-					#write = True
-			#else:
-				#write = True
-			#if write:
-				#shutil.copytree(src, dst, ignore=lambda dir, contents: [i for i in contents if i == '__pycache__'])
-		#else:
-			#report({'WARNING'}, "Python not found in %r, skipping pythn copy" % src)
+		if os.path.exists(src):
+			write = False
+			if os.path.exists(dst):
+				if overwrite_lib:
+					shutil.rmtree(dst)
+					write = True
+			else:
+				write = True
+			if write:
+				shutil.copytree(src, dst, ignore=lambda dir, contents: [i for i in contents if i == '__pycache__'])
+		else:
+			report({'WARNING'}, "Python not found in %r, skipping python copy" % src)
         
 	def WriteAppleRuntime(self, player_path, output_path, copy_python, overwrite_lib):
 		# Enforce the extension
 		if not output_path.endswith('.app'):
 			output_path += '.app'
-			
-		#if not os.path.exists(output_path):
-			#os.makedirs(output_path)
 
-		print("Copying", player_path, "to", output_path)
 		# Use the system's cp command to preserve some meta-data
 		os.system('cp -R "%s" "%s"' % (player_path, output_path))
 		
@@ -189,79 +181,80 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 			self.WriteAppleRuntime(player_path, output_path, copy_python, overwrite_lib)
 			return
 			
-		## Enforce "exe" extension on Windows
-		#if player_path.endswith('.exe') and not output_path.endswith('.exe'):
-			#output_path += '.exe'
+		# Enforce "exe" extension on Windows
+		if player_path.endswith('.exe') and not output_path.endswith('.exe'):
+			output_path += '.exe'
 		
-		## Get the player's binary and the offset for the blend
-		#file = open(player_path, 'rb')
-		#player_d = file.read()
-		#offset = file.tell()
-		#file.close()
+		# Get the player's binary and the offset for the blend
+		file = open(player_path, 'rb')
+		player_d = file.read()
+		offset = file.tell()
+		file.close()
 		
-		## Create a tmp blend file (Blenderplayer doesn't like compressed blends)
-		#tempdir = tempfile.mkdtemp()
-		#blend_path = os.path.join(tempdir, bpy.path.clean_name(output_path))
-		#bpy.ops.wm.save_as_mainfile(filepath=blend_path,
-									#relative_remap=False,
-									#compress=False,
-									#copy=True,
-									#)
-		#blend_path += '.blend'
+		# Create a tmp blend file (Blenderplayer doesn't like compressed blends)
+		tempdir = tempfile.mkdtemp()
+		blend_path = os.path.join(tempdir, bpy.path.clean_name(output_path))
+		bpy.ops.wm.save_as_mainfile(filepath=blend_path,
+									relative_remap=False,
+									compress=False,
+									copy=True,
+									)
+		blend_path += '.blend'
 		
-		## Get the blend data
-		#blend_file = open(blend_path, 'rb')
-		#blend_d = blend_file.read()
-		#blend_file.close()
+		# Get the blend data
+		blend_file = open(blend_path, 'rb')
+		blend_d = blend_file.read()
+		blend_file.close()
 
-		## Get rid of the tmp blend, we're done with it
-		#os.remove(blend_path)
-		#os.rmdir(tempdir)
+		# Get rid of the tmp blend, we're done with it
+		os.remove(blend_path)
+		os.rmdir(tempdir)
 		
-		## Create a new file for the bundled runtime
-		#output = open(output_path, 'wb')
+		# Create a new file for the bundled runtime
+		output = open(output_path, 'wb')
 		
-		## Write the player and blend data to the new runtime
-		#print("Writing runtime...", end=" ")
-		#output.write(player_d)
-		#output.write(blend_d)
+		# Write the player and blend data to the new runtime
+		print("Writing runtime...", end=" ")
+		output.write(player_d)
+		output.write(blend_d)
 		
-		## Store the offset (an int is 4 bytes, so we split it up into 4 bytes and save it)
-		#output.write(struct.pack('B', (offset>>24)&0xFF))
-		#output.write(struct.pack('B', (offset>>16)&0xFF))
-		#output.write(struct.pack('B', (offset>>8)&0xFF))
-		#output.write(struct.pack('B', (offset>>0)&0xFF))
+		# Store the offset (an int is 4 bytes, so we split it up into 4 bytes and save it)
+		output.write(struct.pack('B', (offset>>24)&0xFF))
+		output.write(struct.pack('B', (offset>>16)&0xFF))
+		output.write(struct.pack('B', (offset>>8)&0xFF))
+		output.write(struct.pack('B', (offset>>0)&0xFF))
 		
-		## Stuff for the runtime
-		#output.write(b'BRUNTIME')
-		#output.close()
+		# Stuff for the runtime
+		output.write(b'BRUNTIME')
+		output.close()
 		
-		#print("done")
+		print("done")
 		
-		## Make the runtime executable on Linux
-		#if os.name == 'posix':
-			#os.chmod(output_path, 0o755)
+		# Make the runtime executable on Linux
+		if target_os == 'LINUX':
+			os.chmod(output_path, 0o755)
 			
 		## Copy bundled Python
-		#blender_dir = os.path.dirname(bpy.app.binary_path)
-		#runtime_dir = os.path.dirname(output_path)
+		blender_dir = self.blender_bin_dir_linux if target_os == 'LINUX' else self.blender_bin_dir_windows
+		runtime_dir = os.path.dirname(output_path)
 		
-		#if copy_python:
-			#print("Copying Python files...", end=" ")
-			#py_folder = os.path.join(bpy.app.version_string.split()[0], "python", "lib")
-			#dst = os.path.join(runtime_dir, py_folder)
-			#CopyPythonLibs(dst, overwrite_lib, report)
-			#print("done")
+		if copy_python:
+			print("Copying Python files...", end=" ")
+			src = os.path.join(blender_dir, bpy.app.version_string.split()[0])
+			dst = os.path.join(runtime_dir, bpy.app.version_string.split()[0])
+			print("from", src, "to", dst)
+			shutil.copytree(src=src, dst=dst)
+			print("done")
 
-		## And DLLs
-		#if copy_dlls:
-			#print("Copying DLLs...", end=" ")
-			#for file in [i for i in os.listdir(blender_dir) if i.lower().endswith('.dll')]:
-				#src = os.path.join(blender_dir, file)
-				#dst = os.path.join(runtime_dir, file)
-				#shutil.copy2(src, dst)
+		# And DLLs
+		if copy_dlls:
+			print("Copying DLLs...", end=" ")
+			for file in [i for i in os.listdir(blender_dir) if i.lower().endswith('.dll')]:
+				src = os.path.join(blender_dir, file)
+				dst = os.path.join(runtime_dir, file)
+				shutil.copy2(src, dst)
 
-			#print("done")
+			print("done")
 
 
 def menu_func(self, context):
