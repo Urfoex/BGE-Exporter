@@ -19,16 +19,16 @@
 # build on top of Moguris work #
 
 bl_info = {
-    'name': 'Save As Multiple Game Engine Runtime',
-    'author': 'Manuel Bellersen (Urfoex)',
-    'version': (0, 0, 1),
-    "blender": (2, 66, 0),
-    'location': 'File > Export',
-    'description': 'Bundle a .blend file with the Blenderplayer',
-    'warning': 'Currently only 64 bit support',
-    'wiki_url': '',
-    'tracker_url': '',
-    'category': 'Game Engine'}
+	'name': 'Save As Multiple Game Engine Runtime',
+	'author': 'Manuel Bellersen (Urfoex)',
+	'version': (0, 0, 1),
+	"blender": (2, 66, 0),
+	'location': 'File > Export',
+	'description': 'Bundle a .blend file with the Blenderplayer',
+	'warning': 'Currently only 64 bit support',
+	'wiki_url': '',
+	'tracker_url': '',
+	'category': 'Game Engine'}
 
 import bpy
 import os
@@ -39,30 +39,35 @@ from bpy.props import *
 
 
 class SaveAsMultipleRuntime(bpy.types.Operator):
-    bl_idname = "wm.save_as_multiple_runtime"
-    bl_label = "Save As Multiple Game Engine Runtime"
-    bl_options = {'REGISTER'}
-    
-    #if sys.platform == 'darwin':
-        # XXX, this line looks suspicious, could be done better?
-        #blender_bin_dir_darwin = '/' + os.path.join(*bpy.app.binary_path.split('/')[0:-4])
-        #ext = '.app'
-    #else:
-        #blender_bin_path = bpy.app.binary_path
-        #blender_bin_dir = os.path.dirname(blender_bin_path)
-        #ext = os.path.splitext(blender_bin_path)[-1].lower()
+	bl_idname = "wm.save_as_multiple_runtime"
+	bl_label = "Save As Multiple Game Engine Runtime"
+	bl_options = {'REGISTER'}
+	
+	#if sys.platform == 'darwin':
+		# XXX, this line looks suspicious, could be done better?
+		#blender_bin_dir_darwin = '/' + os.path.join(*bpy.app.binary_path.split('/')[0:-4])
+		#ext = '.app'
+	#else:
+		#blender_bin_path = bpy.app.binary_path
+		#blender_bin_dir = os.path.dirname(blender_bin_path)
+		#ext = os.path.splitext(blender_bin_path)[-1].lower()
+		
+
 
 	blender_version = str(bpy.app.version[0]) + "." + str(bpy.app.version[1]) + "." + str(bpy.app.version[2])
 	default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version + os.sep
+	
+	player_url = "https://bitbucket.org/Urfoex/bge-exporter/get/" + blender_version + ".tar.gz"
 
-	blender_bin_dir_linux = bpy.utils.script_paths()[1] + 
-	blender_bin_dir_windows = bpy.utils.script_paths()[1] + 
-	blender_bin_dir_darwin = bpy.utils.script_paths()[1] + "path_to_blenderplayer.app"
+	blender_bin_dir_linux = default_player_path + os.sep + "linux_64" + os.sep
+	blender_bin_dir_windows = default_player_path + os.sep + "windows_64" + os.sep
+	blender_bin_dir_darwin = default_player_path + os.sep +"osx_64" + os.sep + "Blender" + os.sep
 
-    default_player_path_linux = os.path.join(blender_bin_dir_linux, 'blenderplayer')
-    default_player_path_windows = os.path.join(blender_bin_dir_windows, 'blenderplayer' + ".exe")
-    default_player_path_osx = os.path.join(blender_bin_dir_darwin, 'blenderplayer' + ".app")
-    player_path_linux = StringProperty(
+	default_player_path_linux = os.path.join(blender_bin_dir_linux, 'blenderplayer')
+	default_player_path_windows = os.path.join(blender_bin_dir_windows, 'blenderplayer.exe')
+	default_player_path_osx = os.path.join(blender_bin_dir_darwin, 'blenderplayer.app')
+
+	player_path_linux = StringProperty(
 			name="Player Path Linux",
 			description="The path to the player to use",
 			default=default_player_path_linux,
@@ -80,35 +85,35 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 			default=default_player_path_osx,
 			subtype='FILE_PATH',
 			)
-    #filepath = StringProperty(
-            #subtype='FILE_PATH',
-            #)
-    #copy_python = BoolProperty(
-            #name="Copy Python",
-            #description="Copy bundle Python with the runtime",
-            #default=True,
-            #)
-    #overwrite_lib = BoolProperty(
-            #name="Overwrite 'lib' folder",
-            #description="Overwrites the lib folder (if one exists) with the bundled Python lib folder",
-            #default=False,
-            #)
+	filepath = StringProperty(
+			subtype='FILE_PATH',
+			)
+	copy_python = BoolProperty(
+			name="Copy Python",
+			description="Copy bundle Python with the runtime",
+			default=True,
+			)
+	overwrite_lib = BoolProperty(
+			name="Overwrite 'lib' folder",
+			description="Overwrites the lib folder (if one exists) with the bundled Python lib folder",
+			default=False,
+			)
 
-    ## Only Windows has dlls to copy
-    #if ext == '.exe':
-        #copy_dlls = BoolProperty(
-                #name="Copy DLLs",
-                #description="Copy all needed DLLs with the runtime",
-                #default=True,
-                #)
-    #else:
-        #copy_dlls = False
+	## Only Windows has dlls to copy
+	#if ext == '.exe':
+		#copy_dlls = BoolProperty(
+				#name="Copy DLLs",
+				#description="Copy all needed DLLs with the runtime",
+				#default=True,
+				#)
+	#else:
+		#copy_dlls = False
     
-    def execute(self, context):
-        import time
-        start_time = time.clock()
-        print("Saving runtime to %r" % self.filepath)
-        WriteRuntime(self.player_path_linux,
+	def execute(self, context):
+		import time
+		start_time = time.clock()
+		print("Saving runtime to %r" % self.filepath)
+		WriteRuntime(self.player_path_linux,
 					self.filepath_linux,
 					self.copy_python,
 					self.overwrite_lib,
@@ -133,17 +138,17 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 					target_os='OSX'
 					)
 		
-        print("Finished in %.4fs" % (time.clock()-start_time))
-        return {'FINISHED'}
+		print("Finished in %.4fs" % (time.clock()-start_time))
+		return {'FINISHED'}
 
-    def invoke(self, context, event):
-        if not self.filepath:
-            ext = '.app' if sys.platform == 'darwin' else os.path.splitext(bpy.app.binary_path)[-1]
-            self.filepath = bpy.path.ensure_ext(bpy.data.filepath, ext)
+	def invoke(self, context, event):
+		if not self.filepath:
+			ext = '.app' if sys.platform == 'darwin' else os.path.splitext(bpy.app.binary_path)[-1]
+			self.filepath = bpy.path.ensure_ext(bpy.data.filepath, ext)
 
-        wm = context.window_manager
-        wm.fileselect_add(self)
-        return {'RUNNING_MODAL'}
+		wm = context.window_manager
+		wm.fileselect_add(self)
+		return {'RUNNING_MODAL'}
 	
 	#def CopyPythonLibs(dst, overwrite_lib, report=print):
 		#import platform
@@ -187,7 +192,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		
 		# Python doesn't need to be copied for OS X since it's already inside blenderplayer.app
 		
-	def WriteRuntime(player_path, output_path, copy_python, overwrite_lib, copy_dlls, report=print, target_os):
+	def WriteRuntime(player_path, output_path, copy_python, overwrite_lib, copy_dlls, target_os, report=print):
 		import struct
 
 		# Check the paths
@@ -276,20 +281,20 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 
 
 def menu_func(self, context):
-    self.layout.operator(SaveAsMultipleRuntime.bl_idname)
+	self.layout.operator(SaveAsMultipleRuntime.bl_idname)
 
 
 def register():
-    bpy.utils.register_module(__name__)
+	bpy.utils.register_module(__name__)
 
-    bpy.types.INFO_MT_file_export.append(menu_func)
+	bpy.types.INFO_MT_file_export.append(menu_func)
 
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
+	bpy.utils.unregister_module(__name__)
 
-    bpy.types.INFO_MT_file_export.remove(menu_func)
+	bpy.types.INFO_MT_file_export.remove(menu_func)
 
 
 if __name__ == "__main__":
-    register()
+	register()
