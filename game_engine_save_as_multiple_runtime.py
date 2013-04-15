@@ -55,7 +55,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 
 
 	blender_version = str(bpy.app.version[0]) + "." + str(bpy.app.version[1]) + "." + str(bpy.app.version[2])
-	default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version + os.sep
+	default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version
 	
 	player_url = "https://bitbucket.org/Urfoex/bge-exporter/get/" + blender_version + ".tar.gz"
 
@@ -67,24 +67,24 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 	default_player_path_windows = os.path.join(blender_bin_dir_windows, 'blenderplayer.exe')
 	default_player_path_osx = os.path.join(blender_bin_dir_darwin, 'blenderplayer.app')
 
-	player_path_linux = StringProperty(
-			name="Player Path Linux",
-			description="The path to the player to use",
-			default=default_player_path_linux,
-			subtype='FILE_PATH',
-			)
-	player_path_windows = StringProperty(
-			name="Player Path Windows",
-			description="The path to the player to use",
-			default=default_player_path_windows,
-			subtype='FILE_PATH',
-			)
-	player_path_osx = StringProperty(
-			name="Player Path OSX",
-			description="The path to the player to use",
-			default=default_player_path_osx,
-			subtype='FILE_PATH',
-			)
+	#player_path_linux = StringProperty(
+			#name="Player Path Linux",
+			#description="The path to the player to use",
+			#default=default_player_path_linux,
+			#subtype='FILE_PATH',
+			#)
+	#player_path_windows = StringProperty(
+			#name="Player Path Windows",
+			#description="The path to the player to use",
+			#default=default_player_path_windows,
+			#subtype='FILE_PATH',
+			#)
+	#player_path_osx = StringProperty(
+			#name="Player Path OSX",
+			#description="The path to the player to use",
+			#default=default_player_path_osx,
+			#subtype='FILE_PATH',
+			#)
 	filepath = StringProperty(
 			subtype='FILE_PATH',
 			)
@@ -98,44 +98,37 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 			description="Overwrites the lib folder (if one exists) with the bundled Python lib folder",
 			default=False,
 			)
-
-	## Only Windows has dlls to copy
-	#if ext == '.exe':
-		#copy_dlls = BoolProperty(
-				#name="Copy DLLs",
-				#description="Copy all needed DLLs with the runtime",
-				#default=True,
-				#)
-	#else:
-		#copy_dlls = False
     
 	def execute(self, context):
 		import time
 		start_time = time.clock()
 		print("Saving runtime to %r" % self.filepath)
-		WriteRuntime(self.player_path_linux,
-					self.filepath_linux,
-					self.copy_python,
-					self.overwrite_lib,
-					self.copy_dlls,
-					self.report,
-					target_os='LINUX'
+		print(self.default_player_path_linux)
+		print(self.default_player_path_windows)
+		print(self.default_player_path_osx)
+		self.WriteRuntime(player_path=self.default_player_path_linux,
+					output_path=self.filepath + os.sep + "bin_linux_64",
+					copy_python=self.copy_python,
+					overwrite_lib=self.overwrite_lib,
+					copy_dlls=False,
+					target_os='LINUX',
+					report=self.report,
 					)
-		WriteRuntime(self.player_path_windows,
-					self.filepath_windows,
-					self.copy_python,
-					self.overwrite_lib,
-					self.copy_dlls,
-					self.report,
-					target_os='WINDOWS'
+		self.WriteRuntime(player_path=self.default_player_path_windows,
+					output_path=self.filepath + os.sep + "bin_windows_64",
+					copy_python=self.copy_python,
+					overwrite_lib=self.overwrite_lib,
+					copy_dlls=True,
+					target_os='WINDOWS',
+					report=self.report,
 					)
-		WriteRuntime(self.player_path_osx,
-					self.filepath_osx,
-					self.copy_python,
-					self.overwrite_lib,
-					self.copy_dlls,
-					self.report,
-					target_os='OSX'
+		self.WriteRuntime(player_path=self.default_player_path_osx,
+					output_path=self.filepath + os.sep + "bin_osx_64",
+					copy_python=self.copy_python,
+					overwrite_lib=self.overwrite_lib,
+					copy_dlls=False,
+					target_os='OSX',
+					report=self.report,
 					)
 		
 		print("Finished in %.4fs" % (time.clock()-start_time))
@@ -176,7 +169,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		#else:
 			#report({'WARNING'}, "Python not found in %r, skipping pythn copy" % src)
         
-	def WriteAppleRuntime(player_path, output_path, copy_python, overwrite_lib):
+	def WriteAppleRuntime(self, player_path, output_path, copy_python, overwrite_lib):
 		# Enforce the extension
 		if not output_path.endswith('.app'):
 			output_path += '.app'
@@ -192,7 +185,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		
 		# Python doesn't need to be copied for OS X since it's already inside blenderplayer.app
 		
-	def WriteRuntime(player_path, output_path, copy_python, overwrite_lib, copy_dlls, target_os, report=print):
+	def WriteRuntime(self, player_path, output_path, copy_python, overwrite_lib, copy_dlls, target_os, report=print):
 		import struct
 
 		# Check the paths
