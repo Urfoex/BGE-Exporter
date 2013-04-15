@@ -21,7 +21,7 @@
 bl_info = {
 	'name': 'Save As Multiple Game Engine Runtime',
 	'author': 'Manuel Bellersen (Urfoex)',
-	'version': (0, 0, 1),
+	'version': (0, 0, 2),
 	"blender": (2, 66, 0),
 	'location': 'File > Export',
 	'description': 'Bundle a .blend file with the Blenderplayer',
@@ -125,34 +125,8 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 	def create_directories(self):
 		if not os.path.exists(self.filepath):
 			os.makedirs(self.filepath)
-	
-	def CopyPythonLibs(dst, overwrite_lib, report=print):
-		import platform
-
-		# use python module to find python's libpath
-		src = os.path.dirname(platform.__file__)
-
-		# dst points to lib/, but src points to current python's library path, eg:
-		#  '/usr/lib/python3.2' vs '/usr/lib'
-		# append python's library dir name to destination, so only python's
-		# libraries would be copied
-		if os.name == 'posix':
-			dst = os.path.join(dst, os.path.basename(src))
-
-		if os.path.exists(src):
-			write = False
-			if os.path.exists(dst):
-				if overwrite_lib:
-					shutil.rmtree(dst)
-					write = True
-			else:
-				write = True
-			if write:
-				shutil.copytree(src, dst, ignore=lambda dir, contents: [i for i in contents if i == '__pycache__'])
-		else:
-			report({'WARNING'}, "Python not found in %r, skipping python copy" % src)
         
-	def WriteAppleRuntime(self, player_path, output_path, copy_python, overwrite_lib):
+	def WriteAppleRuntime(self, player_path, output_path, copy_python):
 		# Enforce the extension
 		if not output_path.endswith('.app'):
 			output_path += '.app'
@@ -168,7 +142,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		
 		# Python doesn't need to be copied for OS X since it's already inside blenderplayer.app
 		
-	def WriteRuntime(self, player_path, output_path, copy_python, overwrite_lib, copy_dlls, target_os, report=print):
+	def WriteRuntime(self, player_path, output_path, copy_python, copy_dlls, target_os, report=print):
 		import struct
 
 		# Check the paths
@@ -178,7 +152,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		
 		# Check if we're bundling a .app
 		if player_path.endswith('.app'):
-			self.WriteAppleRuntime(player_path, output_path, copy_python, overwrite_lib)
+			self.WriteAppleRuntime(player_path, output_path, copy_python)
 			return
 			
 		# Enforce "exe" extension on Windows
@@ -243,6 +217,8 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 			src = os.path.join(blender_dir, bpy.app.version_string.split()[0])
 			dst = os.path.join(runtime_dir, bpy.app.version_string.split()[0])
 			print("from", src, "to", dst)
+			if os.path.exists(dst):
+				shutil.rmtree(dst)
 			shutil.copytree(src=src, dst=dst)
 			print("done")
 
