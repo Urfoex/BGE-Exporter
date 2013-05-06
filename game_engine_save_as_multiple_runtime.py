@@ -21,7 +21,7 @@
 bl_info = {
 	'name': 'Save As Multiple Game Engine Runtime',
 	'author': 'Manuel Bellersen (Urfoex)',
-	'version': (0, 0, 4),
+	'version': (0, 0, 5),
 	"blender": (2, 66, 1),
 	'location': 'File > Export',
 	'description': 'Bundle a .blend file with the Blenderplayer',
@@ -32,6 +32,7 @@ bl_info = {
 
 import bpy
 import os
+import sys
 import shutil
 import tarfile
 import urllib.request
@@ -107,23 +108,29 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		if not  os.path.exists(self.player_local):
 			self.get_remote_tgz()
 		if not  os.path.exists(self.default_player_path):
-			os.mkdir(self.default_player_path)
+			#os.mkdir(self.default_player_path)
 			self.unzip_tgz()
 		print("Done.")
 
 	def get_remote_tgz(self):
 		print("Downloading...")
-		remote_zip = urllib.request.urlopen(self.player_url)
-		local_zip = open(self.player_local, 'wb')
-		local_zip.write(remote_zip.readall())
-		local_zip.close()
+		urllib.request.urlretrieve(self.player_url, self.player_local, reporthook)
+		#remote_zip = urllib.request.urlopen(self.player_url)
+		#local_zip = open(self.player_local, 'wb')
+		#local_zip.write(remote_zip.readall())
+		#local_zip.close()
 
 	def unzip_tgz(self):
 		print("Extracting outer...")
+		p = bpy.utils.script_paths()[1] + os.sep
 		tgz_file = tarfile.open(self.player_local, 'r:gz')
-		tgz_file.extractall(path=self.default_player_path)
+		to_rename = os.path.join(p, os.path.commonprefix(tgz_file.getnames()))
+		tgz_file.extractall(path=p)
 		tgz_file.close()
 
+		os.rename(to_rename, self.default_player_path)
+
+		print("Extracting inner...")
 		for archive in os.listdir(self.default_player_path):
 			if archive.endswith(".tar.gz"):
 				print("Extracting ", archive)
@@ -273,6 +280,20 @@ def load_game_blend(cont):
 		python_file = open(self.filepath + os.sep + "start_game.py", "w")
 		python_file.write(python_text)
 		python_file.close()
+
+
+def reporthook(blocknum, blocksize, totalsize):
+	# Thanks to J.F. Sebastian
+	# http://stackoverflow.com/questions/13881092/download-progressbar-for-python-3/13895723#13895723
+	readsofar = blocknum * blocksize
+	if totalsize > 0:
+		percent = readsofar * 1e2 / totalsize
+		s = "\r%5.1f%% %*d / %d" % (percent, len(str(totalsize)), readsofar, totalsize)
+		sys.stderr.write(s)
+		if readsofar >= totalsize:  # near the end
+			sys.stderr.write("\n")
+	else:  # total size is unknown
+		sys.stderr.write("read %d\n" % (readsofar,))
 
 
 def menu_func(self, context):
