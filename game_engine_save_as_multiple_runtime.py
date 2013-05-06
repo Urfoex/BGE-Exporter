@@ -47,7 +47,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 	default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version
 
 	player_url = "https://bitbucket.org/Urfoex/bge-exporter/get/" + blender_version + ".tar.gz"
-	player_local = bpy.utils.script_paths()[1]+ os.sep + blender_version + ".tar.gz"
+	player_local = bpy.utils.script_paths()[1] + os.sep + blender_version + ".tar.gz"
 
 	blender_bin_dir_linux = default_player_path + os.sep + "linux_64" + os.sep
 	blender_bin_dir_windows = default_player_path + os.sep + "windows_64" + os.sep
