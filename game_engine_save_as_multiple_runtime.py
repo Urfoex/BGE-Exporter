@@ -21,8 +21,8 @@
 bl_info = {
 	'name': 'Save As Multiple Game Engine Runtime',
 	'author': 'Manuel Bellersen (Urfoex)',
-	'version': (0, 0, 2),
-	"blender": (2, 66, 0),
+	'version': (0, 0, 3),
+	"blender": (2, 66, 1),
 	'location': 'File > Export',
 	'description': 'Bundle a .blend file with the Blenderplayer',
 	'warning': 'Currently only 64 bit support',
@@ -34,7 +34,7 @@ import bpy
 import os
 import sys
 import shutil
-from bpy.props import *
+from bpy.props import StringProperty, BoolProperty
 
 
 class SaveAsMultipleRuntime(bpy.types.Operator):
@@ -103,12 +103,12 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 			os.makedirs(self.filepath)
 
 	def write_runtimes(self):
-		#if self.create_windows_runtime:
-			#self.write_windows_runtime()
+		if self.create_windows_runtime:
+			self.write_windows_runtime()
 		if self.create_linux_runtime:
 			self.write_linux_runtime()
-		#if self.create_osx_runtime:
-			#self.write_osx_runtime()
+		if self.create_osx_runtime:
+			self.write_osx_runtime()
 		self.write_blend()
 		self.write_python()
 
@@ -154,11 +154,24 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		print("Copying Python files...", end=" ")
 		src = os.path.join(python_path, bpy.app.version_string.split()[0])
 		dst = os.path.join(self.filepath, bpy.app.version_string.split()[0])
+		if not os.path.exists(dst):
+			os.mkdir(dst)
 		print("from", src, "to", dst)
-		if os.path.exists(dst):
-			shutil.rmtree(dst)
-		shutil.copytree(src=src, dst=dst)
+		self.recursive_copy(src, dst)
+
 		print("done")
+
+	def recursive_copy(self, src, dst):
+		for entry in os.listdir(src):
+			e = os.path.join(src, entry)
+			target = os.path.join(dst, entry)
+			if os.path.isdir(e):
+				if not os.path.exists(target):
+					os.mkdir(target)
+				self.recursive_copy(e, os.path.join(dst, entry))
+			else:
+				#print("Copying:", e, "to", target)
+				shutil.copy2(e, target)
 
 	def copy_dll(self):
 		print("Copying DLLs...", end=" ")
@@ -204,12 +217,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 			print({'ERROR'}, "Could not find", player_path)
 			return
 		shutil.copytree(src=player_path, dst=target_path)
-		bpy.ops.wm.save_as_mainfile(
-				filepath=os.path.join(target_path, "Contents" + os.sep + "Resources" + os.sep + "game.blend"),
-				relative_remap=False,
-				compress=False,
-				copy=True,
-				)
+		shutil.copy2(src=self.start_blend, dst=os.path.join(target_path, "Contents" + os.sep + "Resources" + os.sep + "game.blend"))
 
 	def write_blend(self):
 		blend_path = os.path.join(self.filepath, "game.blend")
