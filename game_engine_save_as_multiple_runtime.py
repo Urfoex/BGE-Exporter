@@ -21,7 +21,7 @@
 bl_info = {
 	'name': 'Save As Multiple Game Engine Runtime',
 	'author': 'Manuel Bellersen (Urfoex)',
-	'version': (0, 0, 3),
+	'version': (0, 0, 4),
 	"blender": (2, 66, 1),
 	'location': 'File > Export',
 	'description': 'Bundle a .blend file with the Blenderplayer',
@@ -32,8 +32,9 @@ bl_info = {
 
 import bpy
 import os
-import sys
 import shutil
+import tarfile
+import urllib.request
 from bpy.props import StringProperty, BoolProperty
 
 
@@ -46,6 +47,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 	default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version
 
 	player_url = "https://bitbucket.org/Urfoex/bge-exporter/get/" + blender_version + ".tar.gz"
+	player_local = bpy.utils.script_paths()[1]+ os.sep + blender_version + ".tar.gz"
 
 	blender_bin_dir_linux = default_player_path + os.sep + "linux_64" + os.sep
 	blender_bin_dir_windows = default_player_path + os.sep + "windows_64" + os.sep
@@ -56,6 +58,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 	default_player_path_osx = os.path.join(blender_bin_dir_darwin, 'blenderplayer.app')
 
 	start_blend = default_player_path + os.sep + "start.blend"
+	game_name = "game"
 
 	filepath = StringProperty(
 			subtype='FILE_PATH',
@@ -80,6 +83,9 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		import time
 		start_time = time.clock()
 		print("Saving runtime to", self.filepath)
+		self.game_name = bpy.path.basename(bpy.data.filepath)[:-6]
+		if not self.game_name:
+			self.game_name = "game"
 		self.get_player_files()
 		self.create_directories()
 		self.write_runtimes()
@@ -97,6 +103,34 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 	def get_player_files(self):
 		print("Getting files from:", self.player_url)
 		print("Putting to:", self.default_player_path)
+
+		if not  os.path.exists(self.player_local):
+			self.get_remote_tgz()
+		if not  os.path.exists(self.default_player_path):
+			os.mkdir(self.default_player_path)
+			self.unzip_tgz()
+		print("Done.")
+
+	def get_remote_tgz(self):
+		print("Downloading...")
+		remote_zip = urllib.request.urlopen(self.player_url)
+		local_zip = open(self.player_local, 'wb')
+		local_zip.write(remote_zip.readall())
+		local_zip.close()
+
+	def unzip_tgz(self):
+		print("Extracting outer...")
+		tgz_file = tarfile.open(self.player_local, 'r:gz')
+		tgz_file.extractall(path=self.default_player_path)
+		tgz_file.close()
+
+		for archive in os.listdir(self.default_player_path):
+			if archive.endswith(".tar.gz"):
+				print("Extracting ", archive)
+				tgz_file = tarfile.open(os.path.join(self.default_player_path, archive), 'r:gz')
+				tgz_file.extractall(path=self.default_player_path)
+				tgz_file.close()
+				os.remove(os.path.join(self.default_player_path, archive))
 
 	def create_directories(self):
 		if not os.path.exists(self.filepath):
@@ -133,7 +167,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		output = open(target_path, 'wb')
 
 		# Write the player and blend data to the new runtime
-		print("Writing runtime...", end=" ")
+		print("Writing runtime...")
 		output.write(player_d)
 		output.write(blend_d)
 
@@ -147,11 +181,11 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		output.write(b'BRUNTIME')
 		output.close()
 
-		print("done")
+		print("Done.")
 
 	def copy_python(self, python_path):
 		## Copy bundled Python
-		print("Copying Python files...", end=" ")
+		print("Copying Python files...")
 		src = os.path.join(python_path, bpy.app.version_string.split()[0])
 		dst = os.path.join(self.filepath, bpy.app.version_string.split()[0])
 		if not os.path.exists(dst):
@@ -159,7 +193,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		print("from", src, "to", dst)
 		self.recursive_copy(src, dst)
 
-		print("done")
+		print("Done.")
 
 	def recursive_copy(self, src, dst):
 		for entry in os.listdir(src):
@@ -174,12 +208,12 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 				shutil.copy2(e, target)
 
 	def copy_dll(self):
-		print("Copying DLLs...", end=" ")
+		print("Copying DLLs...")
 		for file in [i for i in os.listdir(self.blender_bin_dir_windows) if i.lower().endswith('.dll')]:
 			src = os.path.join(self.blender_bin_dir_windows, file)
 			dst = os.path.join(self.filepath, file)
 			shutil.copy2(src, dst)
-		print("done")
+		print("Done.")
 
 	def write_runtime(self, player_path, target_path, python_path):
 		if not self.player_exists(player_path):
@@ -192,7 +226,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		self.copy_python(python_path)
 
 	def write_linux_runtime(self):
-		target = self.filepath + os.sep + "TODO_linux_64.bin"
+		target = self.filepath + os.sep + self.game_name + "_linux_64.bin"
 		self.write_runtime(
 				player_path=self.default_player_path_linux,
 				target_path=target,
@@ -203,14 +237,14 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 	def write_windows_runtime(self):
 		self.write_runtime(
 				player_path=self.default_player_path_windows,
-				target_path=self.filepath + os.sep + "TODO_windows_64.exe",
+				target_path=self.filepath + os.sep + self.game_name + "_windows_64.exe",
 				python_path=self.blender_bin_dir_windows
 				)
 		self.copy_dll()
 
 	def write_osx_runtime(self):
 		player_path = self.default_player_path_osx
-		target_path = self.filepath + os.sep + "TODO_osx_64.app"
+		target_path = self.filepath + os.sep + self.game_name + "_osx_64.app"
 		print("Player:", player_path)
 		print("Target:", target_path)
 		if not self.player_exists(player_path):
@@ -220,8 +254,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 		shutil.copy2(src=self.start_blend, dst=os.path.join(target_path, "Contents" + os.sep + "Resources" + os.sep + "game.blend"))
 
 	def write_blend(self):
-		blend_path = os.path.join(self.filepath, "game.blend")
-				#bpy.path.clean_name(output_path) + '.blend')
+		blend_path = os.path.join(self.filepath, self.game_name + ".blend")
 		bpy.ops.wm.save_as_mainfile(
 				filepath=blend_path,
 				relative_remap=False,
@@ -230,7 +263,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 				)
 
 	def write_python(self):
-		game_blend_file = "game.blend"
+		game_blend_file = self.game_name + ".blend"
 		python_text = """import bge
 
 def load_game_blend(cont):
