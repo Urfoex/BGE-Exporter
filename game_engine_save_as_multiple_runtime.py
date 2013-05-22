@@ -21,13 +21,13 @@
 bl_info = {
     'name': 'Save As Multiple Game Engine Runtime',
     'author': 'Manuel Bellersen (Urfoex)',
-    'version': (0, 0, 6),
+    'version': (0, 0, 7),
     "blender": (2, 67, 1),
     'location': 'File > Export',
     'description': 'Bundle a .blend file with the Blenderplayer',
-    'warning': '',
-    'wiki_url': '',
-    'tracker_url': '',
+    'warning': 'Don\'t create 64 Bit and 32 Bit executables in the same directory!',
+    'wiki_url': 'https://bitbucket.org/Urfoex/bge-exporter/wiki/Home',
+    'tracker_url': 'https://bitbucket.org/Urfoex/bge-exporter/issues',
     'category': 'Game Engine'}
 
 import bpy
@@ -106,17 +106,12 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         if not  os.path.exists(self.player_local):
             self.get_remote_tgz()
         if not  os.path.exists(self.default_player_path):
-            #os.mkdir(self.default_player_path)
             self.unzip_tgz()
         print("Done.")
 
     def get_remote_tgz(self):
         print("Downloading...")
         urllib.request.urlretrieve(self.player_url, self.player_local, reporthook)
-        #remote_zip = urllib.request.urlopen(self.player_url)
-        #local_zip = open(self.player_local, 'wb')
-        #local_zip.write(remote_zip.readall())
-        #local_zip.close()
 
     def unzip_tgz(self):
         print("Extracting outer...")
@@ -216,7 +211,6 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
                     os.mkdir(target)
                 self.recursive_copy(e, os.path.join(dst, entry))
             else:
-                #print("Copying:", e, "to", target)
                 shutil.copy2(e, target)
 
     def copy_dll(self):
