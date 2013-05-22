@@ -228,7 +228,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         print("Done.")
 
     def write_runtime(self, player_path, target_path, player_name):
-        player = os.join(player_path, player_name)
+        player = os.path.join(player_path, player_name)
         if not self.player_exists(player):
             print({'ERROR'}, "Could not find", player)
             return
