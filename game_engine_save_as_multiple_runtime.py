@@ -263,6 +263,8 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         if not self.player_exists(player_path):
             print({'ERROR'}, "Could not find", player_path)
             return
+        if os.path.exists(target_path):
+            shutil.rmtree(target_path)
         shutil.copytree(src=player_path, dst=target_path)
         shutil.copy2(src=self.start_blend, dst=os.path.join(target_path, "Contents" + os.sep + "Resources" + os.sep + "game.blend"))
 
