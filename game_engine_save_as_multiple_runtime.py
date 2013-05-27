@@ -21,7 +21,7 @@
 bl_info = {
     'name': 'Save As Multiple Game Engine Runtime',
     'author': 'Manuel Bellersen (Urfoex)',
-    'version': (0, 0, 7),
+    'version': (0, 1, 0),
     "blender": (2, 67, 1),
     'location': 'File > Export',
     'description': 'Bundle a .blend file with the Blenderplayer',
@@ -44,11 +44,14 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
     bl_label = "Save As Multiple Game Engine Runtime"
     bl_options = {'REGISTER'}
 
-    blender_version = str(bpy.app.version[0]) + "." + str(bpy.app.version[1]) + "." + str(bpy.app.version[2])
+    blender_version_major = str(bpy.app.version[0]) + "." + str(bpy.app.version[1])
+    blender_version = blender_version_major + "." + str(bpy.app.version[2])
     default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version
 
-    player_url = "https://bitbucket.org/Urfoex/bge-exporter/get/" + blender_version + ".tar.gz"
-    player_local = bpy.utils.script_paths()[1] + os.sep + blender_version + ".tar.gz"
+    official_url = "http://download.blender.org/release/Blender" + blender_version_major + "/"
+    start_blend_url = "https://bitbucket.org/Urfoex/bge-exporter/get/default.tar.gz"
+    #player_url = "https://bitbucket.org/Urfoex/bge-exporter/get/" + blender_version + ".tar.gz"
+    #player_local = bpy.utils.script_paths()[1] + os.sep + blender_version + ".tar.gz"
 
     start_blend = default_player_path + os.sep + "start.blend"
     game_name = "game"
@@ -85,6 +88,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         self.game_name = bpy.path.basename(bpy.data.filepath)[:-6]
         if not self.game_name:
             self.game_name = "game"
+        self.set_variables()
         self.get_player_files()
         self.create_directories()
         self.write_runtimes()
@@ -99,7 +103,25 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         wm.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
+    def set_variables(self):
+        self.architecture_linux = "i686"
+        self.architecture_windows = "32"
+        self.architecture_osx = "i386"
+        if self.bit_version == "64":
+            self.architecture_linux = "x86_64"
+            self.architecture_windows = "64"
+            self.architecture_osx = "x86_64"
+
     def get_player_files(self):
+        if self.create_windows_runtime:
+            self.get_remote_windows()
+        if self.create_linux_runtime:
+            self.get_remote_linux()
+        if self.create_osx_runtime:
+            self.get_remote_osx()
+        print("TODO")
+        return
+
         print("Getting files from:", self.player_url)
         print("Putting to:", self.default_player_path)
 
@@ -108,6 +130,29 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         if not  os.path.exists(self.default_player_path):
             self.unzip_tgz()
         print("Done.")
+
+    def get_remote_windows(self):
+        self.windows_file_name = "blender-" + self.blender_version_major + bpy.app.version_char + "-windows" + self.architecture_windows + ".zip"
+        self.get_remote_file(self.windows_file_name)
+
+    def get_remote_linux(self):
+        self.linux_file_name = "blender-" + self.blender_version_major + bpy.app.version_char + "-linux-glibc211-" + self.architecture_linux + ".tar.bz2"
+        self.get_remote_file(self.linux_file_name)
+
+    def get_remote_osx(self):
+        self.osx_file_name = "blender-" + self.blender_version_major + bpy.app.version_char + "-OSX_10.6-" + self.architecture_osx + ".zip"
+        self.get_remote_file(self.osx_file_name)
+
+    def get_remote_file(self, file_name):
+        file_url = self.official_url + file_name
+        local_file = bpy.utils.script_paths()[1] + os.sep + file_name
+        if os.path.exists(local_file):
+            print("Using:", local_file)
+        else:
+            print("Getting files from:", file_url)
+            print("Putting to:", local_file)
+            print("Downloading...")
+            urllib.request.urlretrieve(file_url, local_file, reporthook)
 
     def get_remote_tgz(self):
         print("Downloading...")
@@ -133,10 +178,16 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
                 os.remove(os.path.join(self.default_player_path, archive))
 
     def create_directories(self):
+        print("TODO")
+        return
+
         if not os.path.exists(self.filepath):
             os.makedirs(self.filepath)
 
     def write_runtimes(self):
+        print("TODO")
+        return
+
         self.set_runtimepaths()
 
         if self.create_windows_runtime:
