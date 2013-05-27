@@ -35,6 +35,7 @@ import os
 import sys
 import shutil
 import tarfile
+import zipfile
 import urllib.request
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 
@@ -122,31 +123,50 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         self.osx_file_name = self.osx_path_name + ".zip"
 
     def get_player_files(self):
-        if self.create_windows_runtime:
-            self.get_remote_file(self.windows_file_name)
-        if self.create_linux_runtime:
-            self.get_linux_files()
-        if self.create_osx_runtime:
-            self.get_remote_file(self.osx_file_name)
-        print("TODO")
-        return
-
-        if not  os.path.exists(self.default_player_path):
-            self.unzip_tgz()
+        self.get_files_for(
+                self.create_windows_runtime,
+                self.windows_path_name,
+                self.windows_file_name,
+                self.un_zip
+                )
+        self.get_files_for(
+                self.create_linux_runtime,
+                self.linux_path_name,
+                self.linux_file_name,
+                self.un_tbz2
+                )
+        self.get_files_for(
+                self.create_osx_runtime,
+                self.osx_path_name,
+                self.osx_file_name,
+                self.un_zip
+                )
+        self.clear_osx()
+        print("TODO: get player.blend from repo!")
         print("Done.")
 
-    def get_linux_files(self):
-        where = self.default_script_path + self.linux_path_name
-        if os.path.exists(where):
-            print("Using:", where)
-        else:
-            self.get_remote_file(self.linux_file_name)
-            who = self.default_script_path + self.linux_file_name
+    def clear_osx(self):
+        if self.create_osx_runtime:
+            osx_path = self.default_script_path + "Blender"
+            if os.path.exists(osx_path):
+                os.rename(osx_path, self.default_script_path + self.osx_path_name)
 
-            if os.path.exists(who):
-                self.un_tbz2(who, self.default_script_path)
+    def get_files_for(self, create_runtime, os_path_name, file_name, extractor):
+        if create_runtime:
+            local_path = self.default_script_path + os_path_name
+            if os.path.exists(local_path):
+                print("Using:", local_path)
             else:
-                print("Could not find:", who)
+                self.get_external_files(file_name, extractor)
+
+    def get_external_files(self, file_name, extractor):
+        self.get_remote_file(file_name)
+        who = self.default_script_path + file_name
+
+        if os.path.exists(who):
+            extractor(who, self.default_script_path)
+        else:
+            print("Could not find:", who)
 
     def get_remote_file(self, file_name):
         file_url = self.official_url + file_name
@@ -166,24 +186,12 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         tbz2_file.extractall(path=where)
         tbz2_file.close()
 
-    def unzip_tgz(self):
-        print("Extracting outer...")
-        p = self.default_script_path + os.sep
-        tgz_file = tarfile.open(self.player_local, 'r:gz')
-        to_rename = os.path.join(p, os.path.commonprefix(tgz_file.getnames()))
-        tgz_file.extractall(path=p)
-        tgz_file.close()
-
-        os.rename(to_rename, self.default_player_path)
-
-        print("Extracting inner...")
-        for archive in os.listdir(self.default_player_path):
-            if archive.endswith(".tar.gz"):
-                print("Extracting ", archive)
-                tgz_file = tarfile.open(os.path.join(self.default_player_path, archive), 'r:gz')
-                tgz_file.extractall(path=self.default_player_path)
-                tgz_file.close()
-                os.remove(os.path.join(self.default_player_path, archive))
+    def un_zip(self, who, where):
+        print("Extracting:", who)
+        print("To:", where)
+        zip_file = zipfile.ZipFile(who, 'r')
+        zip_file.extractall(path=where)
+        zip_file.close()
 
     def create_directories(self):
         print("TODO")
