@@ -47,6 +47,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
     blender_version_major = str(bpy.app.version[0]) + "." + str(bpy.app.version[1])
     blender_version = blender_version_major + "." + str(bpy.app.version[2])
     default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version
+    default_script_path = bpy.utils.script_paths()[1] + os.sep
 
     official_url = "http://download.blender.org/release/Blender" + blender_version_major + "/"
     start_blend_url = "https://bitbucket.org/Urfoex/bge-exporter/get/default.tar.gz"
@@ -112,40 +113,44 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
             self.architecture_windows = "64"
             self.architecture_osx = "x86_64"
 
+        front = "blender-" + self.blender_version_major + bpy.app.version_char
+        self.windows_path_name = front + "-windows" + self.architecture_windows
+        self.windows_file_name = self.windows_path_name + ".zip"
+        self.linux_path_name = front + "-linux-glibc211-" + self.architecture_linux
+        self.linux_file_name = self.linux_path_name + ".tar.bz2"
+        self.osx_path_name = front + "-OSX_10.6-" + self.architecture_osx
+        self.osx_file_name = self.osx_path_name + ".zip"
+
     def get_player_files(self):
         if self.create_windows_runtime:
-            self.get_remote_windows()
+            self.get_remote_file(self.windows_file_name)
         if self.create_linux_runtime:
-            self.get_remote_linux()
+            self.get_linux_files()
         if self.create_osx_runtime:
-            self.get_remote_osx()
+            self.get_remote_file(self.osx_file_name)
         print("TODO")
         return
 
-        print("Getting files from:", self.player_url)
-        print("Putting to:", self.default_player_path)
-
-        if not  os.path.exists(self.player_local):
-            self.get_remote_tgz()
         if not  os.path.exists(self.default_player_path):
             self.unzip_tgz()
         print("Done.")
 
-    def get_remote_windows(self):
-        self.windows_file_name = "blender-" + self.blender_version_major + bpy.app.version_char + "-windows" + self.architecture_windows + ".zip"
-        self.get_remote_file(self.windows_file_name)
+    def get_linux_files(self):
+        where = self.default_script_path + self.linux_path_name
+        if os.path.exists(where):
+            print("Using:", where)
+        else:
+            self.get_remote_file(self.linux_file_name)
+            who = self.default_script_path + self.linux_file_name
 
-    def get_remote_linux(self):
-        self.linux_file_name = "blender-" + self.blender_version_major + bpy.app.version_char + "-linux-glibc211-" + self.architecture_linux + ".tar.bz2"
-        self.get_remote_file(self.linux_file_name)
-
-    def get_remote_osx(self):
-        self.osx_file_name = "blender-" + self.blender_version_major + bpy.app.version_char + "-OSX_10.6-" + self.architecture_osx + ".zip"
-        self.get_remote_file(self.osx_file_name)
+            if os.path.exists(who):
+                self.un_tbz2(who, self.default_script_path)
+            else:
+                print("Could not find:", who)
 
     def get_remote_file(self, file_name):
         file_url = self.official_url + file_name
-        local_file = bpy.utils.script_paths()[1] + os.sep + file_name
+        local_file = self.default_script_path + os.sep + file_name
         if os.path.exists(local_file):
             print("Using:", local_file)
         else:
@@ -154,13 +159,16 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
             print("Downloading...")
             urllib.request.urlretrieve(file_url, local_file, reporthook)
 
-    def get_remote_tgz(self):
-        print("Downloading...")
-        urllib.request.urlretrieve(self.player_url, self.player_local, reporthook)
+    def un_tbz2(self, who, where):
+        print("Extracting:", who)
+        print("To:", where)
+        tbz2_file = tarfile.open(who, 'r')
+        tbz2_file.extractall(path=where)
+        tbz2_file.close()
 
     def unzip_tgz(self):
         print("Extracting outer...")
-        p = bpy.utils.script_paths()[1] + os.sep
+        p = self.default_script_path + os.sep
         tgz_file = tarfile.open(self.player_local, 'r:gz')
         to_rename = os.path.join(p, os.path.commonprefix(tgz_file.getnames()))
         tgz_file.extractall(path=p)
