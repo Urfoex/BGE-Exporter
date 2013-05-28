@@ -21,7 +21,7 @@
 bl_info = {
     'name': 'Save As Multiple Game Engine Runtime',
     'author': 'Manuel Bellersen (Urfoex)',
-    'version': (0, 1, 1),
+    'version': (0, 1, 2),
     "blender": (2, 65, 1),
     'location': 'File > Export',
     'description': 'Bundle a .blend file with the Blenderplayer',
@@ -37,6 +37,7 @@ import shutil
 import tarfile
 import zipfile
 import urllib.request
+import urllib.error
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 
 
@@ -54,8 +55,6 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
     blend_archive = "default.tar.bz2"
     start_blend_url = "https://bitbucket.org/Urfoex/bge-exporter/get/"
     blend_file = "start.blend"
-    #player_url = "https://bitbucket.org/Urfoex/bge-exporter/get/" + blender_version + ".tar.gz"
-    #player_local = bpy.utils.script_paths()[1] + os.sep + blender_version + ".tar.gz"
 
     start_blend = default_blend_path + blend_file
     game_name = "game"
@@ -93,9 +92,14 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         if not self.game_name:
             self.game_name = "game"
         self.set_variables()
-        self.get_player_files()
-        self.create_game_directory()
-        self.write_runtimes()
+        try:
+            self.get_player_files()
+            self.create_game_directory()
+            self.write_runtimes()
+        except urllib.error.URLError as e:
+            print("Aborting creation of runtime.")
+            print(e)
+
         print("Finished in %.4fs" % (time.clock() - start_time))
         return {'FINISHED'}
 
@@ -108,7 +112,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def set_variables(self):
-        print("TODO: Switch-Case release names")
+        #print("TODO: Switch-Case release names")
         self.architecture_linux = "i686"
         self.architecture_windows = "32"
         self.architecture_osx = "i386"
@@ -185,7 +189,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 
     def get_remote_file(self, source_url, file_name):
         file_url = source_url + file_name
-        local_file = self.default_script_path + os.sep + file_name
+        local_file = self.default_script_path + file_name
         if os.path.exists(local_file):
             print("Using:", local_file)
         else:
@@ -278,7 +282,8 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         dst = dst + os.sep + "python" + os.sep
         if not os.path.exists(dst):
             os.mkdir(dst)
-        print("from", src, "to", dst)
+        print("From:", src)
+        print("To:", dst)
         self.recursive_copy(src, dst)
 
         print("Done.")
