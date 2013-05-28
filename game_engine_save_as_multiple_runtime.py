@@ -47,15 +47,17 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 
     blender_version_major = str(bpy.app.version[0]) + "." + str(bpy.app.version[1])
     blender_version = blender_version_major + "." + str(bpy.app.version[2])
-    default_player_path = bpy.utils.script_paths()[1] + os.sep + blender_version
     default_script_path = bpy.utils.script_paths()[1] + os.sep
+    default_blend_path = default_script_path + "blend_file" + os.sep
 
     official_url = "http://download.blender.org/release/Blender" + blender_version_major + "/"
-    start_blend_url = "https://bitbucket.org/Urfoex/bge-exporter/get/default.tar.gz"
+    blend_archive = "default.tar.bz2"
+    start_blend_url = "https://bitbucket.org/Urfoex/bge-exporter/get/"
+    blend_file = "start.blend"
     #player_url = "https://bitbucket.org/Urfoex/bge-exporter/get/" + blender_version + ".tar.gz"
     #player_local = bpy.utils.script_paths()[1] + os.sep + blender_version + ".tar.gz"
 
-    start_blend = default_player_path + os.sep + "start.blend"
+    start_blend = default_blend_path + blend_file
     game_name = "game"
 
     filepath = StringProperty(
@@ -143,8 +145,20 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
                 self.un_zip
                 )
         self.clear_osx()
-        print("TODO: get player.blend from repo!")
+        self.get_blend_file()
         print("Done.")
+
+    def get_blend_file(self):
+        if os.path.exists(self.default_blend_path) and os.path.exists(self.start_blend):
+            print("Using:", self.start_blend)
+        else:
+            common_prefix = self.get_external_files(self.start_blend_url, self.blend_archive, self.un_tbz2)
+            self.clear_blend_archive(common_prefix)
+
+    def clear_blend_archive(self, source_name):
+        source_path = os.path.join(self.default_script_path, source_name)
+        target_path = self.default_blend_path
+        os.rename(source_path, target_path)
 
     def clear_osx(self):
         if self.create_osx_runtime:
@@ -158,19 +172,19 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
             if os.path.exists(local_path):
                 print("Using:", local_path)
             else:
-                self.get_external_files(file_name, extractor)
+                self.get_external_files(self.official_url, file_name, extractor)
 
-    def get_external_files(self, file_name, extractor):
-        self.get_remote_file(file_name)
+    def get_external_files(self, source_url, file_name, extractor):
+        self.get_remote_file(source_url, file_name)
         who = self.default_script_path + file_name
 
         if os.path.exists(who):
-            extractor(who, self.default_script_path)
+            return extractor(who, self.default_script_path)
         else:
             print("Could not find:", who)
 
-    def get_remote_file(self, file_name):
-        file_url = self.official_url + file_name
+    def get_remote_file(self, source_url, file_name):
+        file_url = source_url + file_name
         local_file = self.default_script_path + os.sep + file_name
         if os.path.exists(local_file):
             print("Using:", local_file)
@@ -184,8 +198,10 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         print("Extracting:", who)
         print("To:", where)
         tbz2_file = tarfile.open(who, 'r')
+        common_prefix = os.path.commonprefix(tbz2_file.getnames())
         tbz2_file.extractall(path=where)
         tbz2_file.close()
+        return common_prefix
 
     def un_zip(self, who, where):
         print("Extracting:", who)
@@ -199,8 +215,6 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
             os.makedirs(self.filepath)
 
     def write_runtimes(self):
-        print("TODO")
-
         self.set_runtimepaths()
 
         if self.create_windows_runtime:
@@ -222,8 +236,6 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 
     def create_player(self, player_path, target_path):
         import struct
-        print("TODO: right blend file")
-        return
 
         # Get the player's binary and the offset for the blend
         file = open(player_path, 'rb')
