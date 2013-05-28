@@ -200,7 +200,6 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 
     def write_runtimes(self):
         print("TODO")
-        return
 
         self.set_runtimepaths()
 
@@ -214,15 +213,17 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         self.write_python()
 
     def set_runtimepaths(self):
-        self.windows_runtime = self.default_player_path + os.sep + "windows_" + self.bit_version + os.sep
-        self.linux_runtime = self.default_player_path + os.sep + "linux_" + self.bit_version + os.sep
-        self.osx_runtime = self.default_player_path + os.sep + "osx_" + self.bit_version + os.sep + "Blender" + os.sep
+        self.windows_runtime = self.default_script_path + self.windows_path_name + os.sep
+        self.linux_runtime = self.default_script_path + self.linux_path_name + os.sep
+        self.osx_runtime = self.default_script_path + self.osx_path_name + os.sep
 
     def player_exists(self, player_path):
         return os.path.isfile(player_path) or (os.path.exists(player_path) and player_path.endswith('.app'))
 
     def create_player(self, player_path, target_path):
         import struct
+        print("TODO: right blend file")
+        return
 
         # Get the player's binary and the offset for the blend
         file = open(player_path, 'rb')
@@ -258,8 +259,11 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
     def copy_python(self, python_path):
         ## Copy bundled Python
         print("Copying Python files...")
-        src = os.path.join(python_path, bpy.app.version_string.split()[0])
+        src = os.path.join(python_path, bpy.app.version_string.split()[0]) + os.sep + "python" + os.sep
         dst = os.path.join(self.filepath, bpy.app.version_string.split()[0])
+        if not os.path.exists(dst):
+            os.mkdir(dst)
+        dst = dst + os.sep + "python" + os.sep
         if not os.path.exists(dst):
             os.mkdir(dst)
         print("from", src, "to", dst)
