@@ -21,8 +21,8 @@
 bl_info = {
     'name': 'Save As Multiple Game Engine Runtime',
     'author': 'Manuel Bellersen (Urfoex)',
-    'version': (0, 1, 0),
-    "blender": (2, 67, 1),
+    'version': (0, 1, 1),
+    "blender": (2, 65, 1),
     'location': 'File > Export',
     'description': 'Bundle a .blend file with the Blenderplayer',
     'warning': 'Don\'t create 64 Bit and 32 Bit executables in the same directory!',
@@ -92,7 +92,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
             self.game_name = "game"
         self.set_variables()
         self.get_player_files()
-        self.create_directories()
+        self.create_game_directory()
         self.write_runtimes()
         print("Finished in %.4fs" % (time.clock() - start_time))
         return {'FINISHED'}
@@ -106,6 +106,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         return {'RUNNING_MODAL'}
 
     def set_variables(self):
+        print("TODO: Switch-Case release names")
         self.architecture_linux = "i686"
         self.architecture_windows = "32"
         self.architecture_osx = "i386"
@@ -193,10 +194,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         zip_file.extractall(path=where)
         zip_file.close()
 
-    def create_directories(self):
-        print("TODO")
-        return
-
+    def create_game_directory(self):
         if not os.path.exists(self.filepath):
             os.makedirs(self.filepath)
 
