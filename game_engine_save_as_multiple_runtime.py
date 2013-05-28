@@ -319,7 +319,7 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
         self.copy_python(player_path)
 
     def write_linux_runtime(self):
-        target = self.filepath + os.sep + self.game_name + "_linux_" + self.bit_version + ".bin"
+        target = os.path.join(self.filepath, self.game_name + "_linux_" + self.bit_version + ".bin")
         self.write_runtime(
                 player_path=self.linux_runtime,
                 target_path=target,
@@ -330,14 +330,14 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
     def write_windows_runtime(self):
         self.write_runtime(
                 player_path=self.windows_runtime,
-                target_path=self.filepath + os.sep + self.game_name + "_windows_" + self.bit_version + ".exe",
+                target_path=os.path.join(self.filepath, self.game_name + "_windows_" + self.bit_version + ".exe"),
                 player_name='blenderplayer.exe'
                 )
         self.copy_dll()
 
     def write_osx_runtime(self):
         player_path = os.path.join(self.osx_runtime, 'blenderplayer.app')
-        target_path = self.filepath + os.sep + self.game_name + "_osx_" + self.bit_version + ".app"
+        target_path = os.path.join(self.filepath, self.game_name + "_osx_" + self.bit_version + ".app")
         print("Player:", player_path)
         print("Target:", target_path)
         if not self.player_exists(player_path):
@@ -365,7 +365,7 @@ def load_game_blend(cont):
     bge.logic.startGame(\""""
         python_text += game_blend_file
         python_text += """\")"""
-        python_file = open(self.filepath + os.sep + "start_game.py", "w")
+        python_file = open(os.path.join(self.filepath, "start_game.py"), "w")
         python_file.write(python_text)
         python_file.close()
 
