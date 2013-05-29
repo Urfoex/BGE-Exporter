@@ -21,7 +21,7 @@
 bl_info = {
     'name': 'Save As Multiple Game Engine Runtime',
     'author': 'Manuel Bellersen (Urfoex)',
-    'version': (0, 1, 2),
+    'version': (0, 1, 3),
     "blender": (2, 65, 1),
     'location': 'File > Export',
     'description': 'Bundle a .blend file with the Blenderplayer',
@@ -359,12 +359,11 @@ class SaveAsMultipleRuntime(bpy.types.Operator):
 
     def write_python(self):
         game_blend_file = self.game_name + ".blend"
-        python_text = """import bge
-
-def load_game_blend(cont):
-    bge.logic.startGame(\""""
-        python_text += game_blend_file
-        python_text += """\")"""
+        python_text = "import bge\n"
+        python_text += "\n"
+        python_text += "def load_game_blend(cont):\n"
+        python_text += "    bge.render.setFullScreen(" + ("True" if bpy.context.scene.game_settings.show_fullscreen else "False") + ")\n"
+        python_text += "    bge.logic.startGame(\"" + game_blend_file + "\")\n"
         python_file = open(os.path.join(self.filepath, "start_game.py"), "w")
         python_file.write(python_text)
         python_file.close()
